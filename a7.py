@@ -139,12 +139,21 @@ class BayesClassifier:
         pos_denominator = sum(self.pos_freqs.values())
         neg_denominator = sum(self.neg_freqs.values())
 
+        #print(pos_denominator, neg_denominator)
+
         # for each token in the text, calculate the probability of it occurring in a
         # postive document and in a negative document and add the logs of those to the
         # running sums. when calculating the probabilities, always add 1 to the numerator
         # of each probability for add one smoothing (so that we never have a probability
         # of 0)
+        for token in tokens:
+            pos_freqs = self.pos_freqs.get(token, 0) + 1
+            neg_freqs = self.neg_freqs.get(token, 0) + 1
+            print(pos_freqs, neg_freqs)
 
+            pos_score = math.log(pos_freqs / pos_denominator)
+            neg_score = math.log(neg_freqs / neg_denominator)
+            print(pos_score, neg_score)
 
         # for debugging purposes, it may help to print the overall positive and negative
         # probabilities
@@ -152,7 +161,10 @@ class BayesClassifier:
 
         # determine whether positive or negative was more probable (i.e. which one was
         # larger)
-        
+        if pos_score > neg_score:
+            return pos_score
+        else:
+            return neg_score
 
         # return a string of "positive" or "negative"
 
