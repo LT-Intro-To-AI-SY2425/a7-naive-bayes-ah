@@ -1,6 +1,6 @@
+# Kevin Asante
 import math, os, pickle, re
 from typing import Tuple, List, Dict
-
 
 class BayesClassifier:
     """A simple BayesClassifier implementation
@@ -29,7 +29,7 @@ class BayesClassifier:
         self.neg_file_prefix: str = "movies-1"
         self.pos_file_prefix: str = "movies-5"
 
-        # check both cached classifiers exist within the current directory
+        # check if both cached classifiers exist within the current directory
         if os.path.isfile(self.pos_filename) and os.path.isfile(self.neg_filename):
             print("Data files found - loading to use cached values...")
             self.pos_freqs = self.load_dict(self.pos_filename)
@@ -66,12 +66,21 @@ class BayesClassifier:
         # enumerate function, which loops over something and has an automatic counter.
         # write something like this to track progress (note the `# type: ignore` comment
         # which tells mypy we know better and it shouldn't complain at us on this line):
+        
+        file = self.load_file("sorted_stoplist.txt")
+        stopwords = self.tokenize(file)
+        # print(stopwords)
+        
+        
         for index, filename in enumerate(files, 1): # type: ignore
             print(f"Training on file {index} of {len(files)}")
+        #     <the rest of your code for updating frequencies here>
             text = self.load_file(os.path.join(self.training_data_directory, filename))
             tokens = self.tokenize(text)
-            #print(token)
+            # print(tokens)
 
+            filtered_tokens = [token for token in tokens if token not in stopwords]
+            # print(filtered_tokens)
         # we want to fill pos_freqs and neg_freqs with the correct counts of words from
         # their respective reviews
         
@@ -83,9 +92,9 @@ class BayesClassifier:
         # ignore it and move to the next file (this is more just to be safe; we won't
         # test your code with neutral reviews)
             if filename.startswith(self.pos_file_prefix):
-                self.update_dict(tokens, self.pos_freqs)
+                self.update_dict(filtered_tokens, self.pos_freqs)
             elif filename.startswith(self.neg_file_prefix):
-                self.update_dict(tokens, self.neg_freqs)
+                self.update_dict(filtered_tokens, self.neg_freqs)
         
 
         # Updating frequences: to update the frequencies for each file, you need to get
@@ -93,11 +102,17 @@ class BayesClassifier:
         # those tokens. We've asked you to write a function `update_dict` that will make
         # your life easier here. Write that function first then pass it your list of
         # tokens from the file and the appropriate dictionary
-        print(self.pos_freqs["good"])
-        print(self.neg_freqs["good"])
-        print(self.pos_freqs["bad"])
-        print(self.neg_freqs["bad"])
-
+        
+        # print(self.pos_freqs["happy"])
+        # print(self.neg_freqs["happy"])
+        # print(self.pos_freqs["sad"])
+        # print(self.neg_freqs["sad"])
+        # print(self.pos_freqs["bad"])
+        # print(self.neg_freqs["bad"])
+        # print(self.pos_freqs["actor"])
+        # print(self.neg_freqs["actor"])
+        # print(self.pos_freqs["the"])
+        # print(self.neg_freqs["the"])
         # for debugging purposes, it might be useful to print out the tokens and their
         # frequencies for both the positive and negative dictionaries
         
@@ -139,32 +154,41 @@ class BayesClassifier:
         pos_denominator = sum(self.pos_freqs.values())
         neg_denominator = sum(self.neg_freqs.values())
 
-        #print(pos_denominator, neg_denominator)
+        vocab = set(self.pos_freqs.keys()).union(self.neg_freqs.keys()) 
+        # print(vocab)
+        vocab_size = len(vocab)
+        # print(pos_denominator, neg_denominator)
+
+        file = self.load_file("sorted_stoplist.txt")
+        stopwords = self.tokenize(file)
 
         # for each token in the text, calculate the probability of it occurring in a
         # postive document and in a negative document and add the logs of those to the
         # running sums. when calculating the probabilities, always add 1 to the numerator
         # of each probability for add one smoothing (so that we never have a probability
         # of 0)
+
         for token in tokens:
-            pos_freqs = self.pos_freqs.get(token, 0) + 1
-            neg_freqs = self.neg_freqs.get(token, 0) + 1
-            print(pos_freqs, neg_freqs)
+            if token not in stopwords:
+                pos_freqs = self.pos_freqs.get(token, 0) + 1
+                neg_freqs = self.neg_freqs.get(token, 0) + 1
+                # print(pos_freqs, neg_freqs)
 
-            pos_score = math.log(pos_freqs / pos_denominator)
-            neg_score = math.log(neg_freqs / neg_denominator)
-            print(pos_score, neg_score)
+                pos_score += math.log(pos_freqs / (pos_denominator + vocab_size))
+                neg_score += math.log(neg_freqs / (neg_denominator + vocab_size))
 
+        
         # for debugging purposes, it may help to print the overall positive and negative
         # probabilities
-        
+        print(f"Positive Probability: {pos_score}")
+        print(f"Negative Probability: {neg_score}")
 
         # determine whether positive or negative was more probable (i.e. which one was
         # larger)
         if pos_score > neg_score:
-            return pos_score
+            return "positive"
         else:
-            return neg_score
+            return "negative"
 
         # return a string of "positive" or "negative"
 
@@ -282,12 +306,12 @@ if __name__ == "__main__":
     print(f"count for the word 'computer' in negative dictionary {b.neg_freqs['computer']}")
     print(f"count for the word 'science' in positive dictionary {b.pos_freqs['science']}")
     print(f"count for the word 'science' in negative dictionary {b.neg_freqs['science']}")
-    print(f"count for the word 'i' in positive dictionary {b.pos_freqs['i']}")
-    print(f"count for the word 'i' in negative dictionary {b.neg_freqs['i']}")
-    print(f"count for the word 'is' in positive dictionary {b.pos_freqs['is']}")
-    print(f"count for the word 'is' in negative dictionary {b.neg_freqs['is']}")
-    print(f"count for the word 'the' in positive dictionary {b.pos_freqs['the']}")
-    print(f"count for the word 'the' in negative dictionary {b.neg_freqs['the']}")
+    # print(f"count for the word 'i' in positive dictionary {b.pos_freqs['i']}")
+    # print(f"count for the word 'i' in negative dictionary {b.neg_freqs['i']}")
+    # print(f"count for the word 'is' in positive dictionary {b.pos_freqs['is']}")
+    # print(f"count for the word 'is' in negative dictionary {b.neg_freqs['is']}")
+    # print(f"count for the word 'the' in positive dictionary {b.pos_freqs['the']}")
+    # print(f"count for the word 'the' in negative dictionary {b.neg_freqs['the']}")
 
     print("\nHere are some sample probabilities.")
     print(f"P('love'| pos) {(b.pos_freqs['love']+1)/pos_denominator}")
@@ -302,4 +326,21 @@ if __name__ == "__main__":
     print("\nThe following should all be negative.")
     print(b.classify('rainy days are the worst'))
     print(b.classify('computer science is terrible'))
-    pass
+
+    # Use this space to complete your analysis assignment
+    print("\nThe following is to test out the method with each groups responses")
+    print(b.classify("Summer break is almost here.  I am super excited and I know that it's going to be the best"))
+    # Complete two more positive sentiment strings
+
+    # Negative sentiment statements
+    print(b.classify("I am nervous that I won't do well on the AP tests.  I have studied, but I don't think I'll do that well"))
+    # Complete two more negative sentiment strings
+
+
+    # Two positive reviews
+    #print(b.classify("An amazing movie, perfectly articulates, a lot of emotional feelings and emotional experiences. Honestly, I am absolutely flabbergasted at how genuine and honest the directors or whoever the heck wrote this movie got everything spot on. Especially when it comes to being a teenager and how your parents make you feel like a burden for the kind of lifestyle that they work so hard for you to have. Even seeing adults and recognizing how they are processing their own emotions it Beautifully articulate. All I have to say is thank you thank you for this experience and thank you for allowing me to feel some thing and just look at something from a different emotional perspective. I’m gonna be honest this movie made me feel things typically movies don’t really make me feel things but I actually felt heartbroken, just similar nearly to some of the characters when I was witnessing some things in this movie."))
+    #print(b.classify("I genuinely never write reviews for movies, but this film was just so beautifully directed. I had no  idea what it was about in the beginning but it really struck a cord with me while watching it. The film is heartbreaking and healing at the same time. It really teaches you a lot about life and forgiveness and not to mention it also had an amazing soundtrack. It’s a must watch!"))
+
+    # Two negative reviews
+    #print(b.classify("The Worst 2 hours and 15 minutes of my life. I was in a state of absolute terror for the entirety of the film. The production and soundtrack was cool or whatever but why in the world was the camera spinning so many damn times??? OR why was the quality blurry with blotchy sound as if I was the one popping pain killers. Everyone swore up and down this move was life altering and displayed how life could change in the span of a moment as if this wasn't a play by play of how to NOT live your life. Like the main character literally made every possible wrong decision. Now let's get into the random switch of main characters HALF WAY THROUGH THE FILM. Like why did it randomly become some freaking romance with the little sister no one cared about and white boy Fred. Literally had me questioning  if I fell asleep and Netflix switched films on me or something. CAUTION CAUTION CAUTION watch this film at your own risk. May include boredom, depression, and loss of any joy that life has given you."))
+    print(b.classify("I found it to be ridiculous.  But when I read a review that stated that it wasn't actually written with a black cast in mind...I knew why I thought it was ridiculous.  There are so few movies that have a middle class black family with a real black mom (as in hue) and dad. So I was looking forward to seeing what would ensue.  Unfortunately, nothing new. Black dad seems to be involved in his kids' lives, wanting them to be successful and helping them to do those things that will guarantee this. Yet, the black son has to mess up and the next thing you know, he's in jail.  Then the second half of the story is 'supposed' to be about the teen-aged daughter but is instead about her white boyfriend. What the--How so many people are saying this movie is wonderful is beyond my comprehension."))
